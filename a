@@ -1,0 +1,51 @@
+lib/
+├── main.dart
+├── core/
+│   ├── localization/
+│   ├── style/
+│   │   ├── colors.dart
+│   │   ├── sizes.dart
+│   │   └── text_styles.dart
+│   └── theme/
+│       └── dark_mode_controller.dart
+├── data/
+│   ├── models/
+│   └── services/
+│       └── hive_service.dart
+├── features/
+│   ├── courses/
+│   │   └── presentation/
+│   │       └── widgets/
+│   │           └── course_card.dart
+│   └── khabgah/
+│       ├── presentation/
+│       │   ├── pages/
+│       │   │   ├── blocks_page.dart
+│       │   │   └── khabgah.dart
+│       │   └── widgets/
+│       │       ├── block_card.dart
+│       │       └── room_info_card.dart
+├── presentation/
+│   ├── pages/
+│   │   ├── course/
+│   │   │   ├── show/
+│   │   │   │   ├── course_timetable.dart
+│   │   │   │   └── eligible_courses_page.dart
+│   │   │   └── course_page_mobile.dart
+│   │   ├── home/
+│   │   │   └── home_page.dart
+│   │   ├── next_term/
+│   │   │   └── eligible_courses/
+│   │   │       └── edit_course_page.dart
+│   │   └── schedule/
+│   │       └── schedule_page.dart
+│   └── widgets/
+├── shared/
+│   ├── utils/
+│   └── widgets/
+│       ├── custom_button.dart
+│       ├── custom_card.dart
+│       ├── custom_text_field.dart
+│       ├── dark_mode_toggle.dart
+│       └── loading_indicator.dart
+└── utils/

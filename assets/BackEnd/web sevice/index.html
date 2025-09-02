@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Management</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Database Management</h1>
+
+    <section id="table-list">
+        <h2>Existing Tables</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Table Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="table-rows">
+                <!-- Rows will be dynamically populated -->
+            </tbody>
+        </table>
+        <button id="add-table-button">Add New Table</button>
+    </section>
+
+    <section id="import-excel">
+        <h2>Import Excel File</h2>
+        <form id="excel-upload-form">
+            <div class="form-group">
+                <label for="excel-file">Choose Excel File:</label>
+                <input type="file" id="excel-file" name="file" accept=".xlsx" required>
+            </div>
+            <button type="submit">Import Data</button>
+        </form>
+        <div id="import-status"></div>
+    </section>
+
+    <section id="add-table" style="display: none;">
+        <h2>Add Table</h2>
+        <form id="add-table-form">
+            <label for="table-name">Table Name:</label>
+            <input type="text" id="table-name" name="table-name" required>
+
+            <label for="columns">Columns (e.g., id INTEGER PRIMARY KEY, name TEXT):</label>
+            <input type="text" id="columns" name="columns" required>
+
+            <button type="submit">Add Table</button>
+        </form>
+    </section>
+
+    <section id="edit-table-section" style="display: none;">
+        <h2>Edit Table: <span id="edit-table-name"></span></h2>
+        <table>
+            <thead id="edit-table-headers">
+                <!-- Headers will be dynamically populated -->
+            </thead>
+            <tbody id="edit-table-rows">
+                <!-- Rows will be dynamically populated -->
+            </tbody>
+        </table>
+        <button id="save-table-changes">Save Changes</button>
+        <button id="back-to-tables">Back to Tables</button>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>
