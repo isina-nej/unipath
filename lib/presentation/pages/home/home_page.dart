@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:responsive_builder/responsive_builder.dart';
 import '../../widgets/animated_menu_button.dart';
 import '../../../core/style/sizes.dart';
 import '../../../core/style/text_styles.dart';
@@ -6,7 +7,10 @@ import '../../../../core/theme/dark_mode_controller.dart';
 import '../../../core/routing/app_routes.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/hive_service.dart';
+import '../../../core/utils/error_handler.dart';
 
+/// صفحه اصلی برنامه
+/// این کلاس از الگوی State Management استفاده می‌کند و ریسپانسیو است
 class MainPage extends StatefulWidget {
   final HiveService hiveService;
 
@@ -25,9 +29,16 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    _checkAndLoadData().then((_) => _debugPrintCourses());
+    _loadInitialData();
   }
 
+  /// بارگذاری داده‌های اولیه
+  Future<void> _loadInitialData() async {
+    await _checkAndLoadData();
+    await _debugPrintCourses();
+  }
+
+  /// نمایش اطلاعات کش برای دیباگ
   Future<void> _debugPrintCourses() async {
     print('\n=== وضعیت داده‌های ذخیره شده در کش ===');
     try {
@@ -42,6 +53,7 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  /// بررسی و بارگذاری داده‌ها
   Future<void> _checkAndLoadData() async {
     final lastUpdateTime = await widget.hiveService.getLastUpdateTime();
     if (lastUpdateTime == null ||
@@ -50,204 +62,234 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  /// به‌روزرسانی داده‌ها
   Future<void> _refreshData() async {
     if (_isRefreshing) return;
 
-    setState(() {
-      _isRefreshing = true;
-    });
+    setState(() => _isRefreshing = true);
 
     try {
-      // دریافت همه اطلاعات با یک درخواست
       final allData = await ApiService.getAllUniversityData();
-
-      // ذخیره مستقیم داده‌ها در Hive
       await widget.hiveService.saveServerData(allData);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('اطلاعات با موفقیت به‌روزرسانی شد'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        _showSnackBar('اطلاعات با موفقیت به‌روزرسانی شد', Colors.green);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('خطا در به‌روزرسانی اطلاعات'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        _showSnackBar('خطا در به‌روزرسانی اطلاعات', Colors.red);
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isRefreshing = false;
-        });
+        setState(() => _isRefreshing = false);
       }
+    }
+  }
+
+  /// نمایش SnackBar
+  void _showSnackBar(String message, Color color) {
+    if (color == Colors.green) {
+      ErrorHandler.showSuccessSnackBar(context, message);
+    } else {
+      ErrorHandler.showErrorSnackBar(context, message);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    return ScreenTypeLayout.builder(
+      mobile: (context) => _buildMobileLayout(),
+      tablet: (context) => _buildTabletLayout(),
+      desktop: (context) => _buildDesktopLayout(),
+    );
+  }
+
+  /// ساخت لایه موبایل
+  Widget _buildMobileLayout() {
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: _buildBody(crossAxisCount: 2),
+    );
+  }
+
+  /// ساخت لایه تبلت
+  Widget _buildTabletLayout() {
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: _buildBody(crossAxisCount: 3),
+    );
+  }
+
+  /// ساخت لایه دسکتاپ
+  Widget _buildDesktopLayout() {
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: _buildBody(crossAxisCount: 4),
+    );
+  }
+
+  /// ساخت AppBar
+  PreferredSizeWidget _buildAppBar() {
     final darkMode = DarkModeController.shared;
     final isDark = darkMode.isDarkMode;
 
-    return Scaffold(
-      appBar: AppBar(
-        // عنوان صفحه در وسط
-        title: Text(
-          'صفحه اصلی',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
-          ),
+    return AppBar(
+      title: Text(
+        'صفحه اصلی',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: isDark ? Colors.white : Colors.black,
         ),
-        centerTitle: true,
-        leadingWidth: 100,
-
-        // دکمه‌های سمت راست
-        leading: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            PopupMenuButton<int>(
-              padding: const EdgeInsets.only(right: 4),
-              constraints: const BoxConstraints(),
-              icon: Icon(
-                Icons.menu,
-                color: isDark ? Colors.white : Colors.black,
-              ),
-              tooltip: 'منو',
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 1,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.refresh,
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('به‌روزرسانی اطلاعات'),
-                    ],
-                  ),
-                ),
-              ],
-              onSelected: (value) {
-                if (value == 1) _refreshData();
-              },
-            ),
-            const SizedBox(width: 4),
-            IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              icon: Icon(
-                isDark ? Icons.dark_mode : Icons.light_mode,
-                color: isDark ? Colors.white : Colors.black,
-                size: 24,
-              ),
-              tooltip: isDark ? 'روشن' : 'تاریک',
-              onPressed: () async {
-                await darkMode.toggleDarkMode();
-                setState(() {});
-              },
-            ),
-          ],
-        ),
-
-        // دکمه‌های سمت چپ
-        actions: [
-          IconButton(
+      ),
+      centerTitle: true,
+      leadingWidth: 100,
+      leading: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PopupMenuButton<int>(
+            padding: const EdgeInsets.only(right: 4),
+            constraints: const BoxConstraints(),
             icon: Icon(
-              Icons.account_circle,
-              size: 30,
+              Icons.menu,
               color: isDark ? Colors.white : Colors.black,
             ),
-            tooltip: 'پروفایل',
-            onPressed: () {
-              // TODO: نمایش صفحه پروفایل
+            tooltip: 'منو',
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 1,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.refresh,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('به‌روزرسانی اطلاعات'),
+                  ],
+                ),
+              ),
+            ],
+            onSelected: (value) {
+              if (value == 1) _refreshData();
+            },
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            icon: Icon(
+              isDark ? Icons.dark_mode : Icons.light_mode,
+              color: isDark ? Colors.white : Colors.black,
+              size: 24,
+            ),
+            tooltip: isDark ? 'روشن' : 'تاریک',
+            onPressed: () async {
+              await darkMode.toggleDarkMode();
+              setState(() {});
             },
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWeb = MediaQuery.of(context).size.width > 600;
-          final crossAxisCount = isWeb
-              ? AppSizes.webCrossAxisCount
-              : AppSizes.mobileCrossAxisCount;
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.account_circle,
+            size: 30,
+            color: isDark ? Colors.white : Colors.black,
+          ),
+          tooltip: 'پروفایل',
+          onPressed: () => _showProfileDialog(),
+        ),
+      ],
+    );
+  }
 
-          return Directionality(
-            textDirection: TextDirection.rtl,
-            child: GridView.count(
-              crossAxisCount: crossAxisCount,
-              padding: AppSizes.pagePadding,
-              mainAxisSpacing: AppSizes.gridSpacing,
-              crossAxisSpacing: AppSizes.gridSpacing,
-              childAspectRatio: 1.0,
-              children: [
-                AnimatedMenuButton(
-                  title: 'انتخاب واحد',
-                  style: AppTextStyles.mainPageMenuButton(
-                      DarkModeController.shared.isDarkMode),
-                  icon: Icons.school,
-                  onTap: () {
-                    AppRoutes.goToCourse();
-                  },
-                  gradientStartColor: DarkModeController()
-                      .getMenuButtonStartColor('courseSelection'),
-                  gradientEndColor: DarkModeController()
-                      .getMenuButtonEndColor('courseSelection'),
-                ),
-                AnimatedMenuButton(
-                  title: 'برنامه کلاسی',
-                  style: AppTextStyles.mainPageMenuButton(
-                      DarkModeController.shared.isDarkMode),
-                  icon: Icons.calendar_today,
-                  onTap: () {
-                    AppRoutes.goToSchedule();
-                  },
-                  gradientStartColor:
-                      DarkModeController().getMenuButtonStartColor('schedule'),
-                  gradientEndColor:
-                      DarkModeController().getMenuButtonEndColor('schedule'),
-                ),
-                AnimatedMenuButton(
-                  title: 'افزودن سکشن',
-                  style: AppTextStyles.mainPageMenuButton(
-                      DarkModeController.shared.isDarkMode),
-                  icon: Icons.add_box,
-                  onTap: () {
-                    AppRoutes.goToCourseRegistration();
-                  },
-                  gradientStartColor: DarkModeController()
-                      .getMenuButtonStartColor('sectionAdd'),
-                  gradientEndColor:
-                      DarkModeController().getMenuButtonEndColor('sectionAdd'),
-                ),
-                AnimatedMenuButton(
-                  title: 'زمان‌بندی دروس',
-                  style: AppTextStyles.mainPageMenuButton(
-                      DarkModeController.shared.isDarkMode),
-                  icon: Icons.schedule,
-                  onTap: () {
-                    AppRoutes.goToSchedule();
-                  },
-                  gradientStartColor:
-                      DarkModeController().getMenuButtonStartColor('timetable'),
-                  gradientEndColor:
-                      DarkModeController().getMenuButtonEndColor('timetable'),
-                ),
-              ],
-            ),
-          );
-        },
+  /// نمایش دیالوگ پروفایل
+  void _showProfileDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('پروفایل'),
+        content: const Text('این بخش در حال توسعه است'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('بستن'),
+          ),
+        ],
       ),
+    );
+  }
+
+  /// ساخت بدنه صفحه
+  Widget _buildBody({required int crossAxisCount}) {
+    final darkMode = DarkModeController.shared;
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: GridView.count(
+        crossAxisCount: crossAxisCount,
+        padding: AppSizes.pagePadding,
+        mainAxisSpacing: AppSizes.gridSpacing,
+        crossAxisSpacing: AppSizes.gridSpacing,
+        childAspectRatio: 1.0,
+        children: _buildMenuButtons(darkMode),
+      ),
+    );
+  }
+
+  /// ساخت دکمه‌های منو
+  List<Widget> _buildMenuButtons(DarkModeController darkMode) {
+    return [
+      _buildMenuButton(
+        title: 'انتخاب واحد',
+        icon: Icons.school,
+        onTap: () => AppRoutes.goToCourse(),
+        startColor: darkMode.getMenuButtonStartColor('courseSelection'),
+        endColor: darkMode.getMenuButtonEndColor('courseSelection'),
+      ),
+      _buildMenuButton(
+        title: 'برنامه کلاسی',
+        icon: Icons.calendar_today,
+        onTap: () => AppRoutes.goToSchedule(),
+        startColor: darkMode.getMenuButtonStartColor('schedule'),
+        endColor: darkMode.getMenuButtonEndColor('schedule'),
+      ),
+      _buildMenuButton(
+        title: 'افزودن سکشن',
+        icon: Icons.add_box,
+        onTap: () => AppRoutes.goToCourseRegistration(),
+        startColor: darkMode.getMenuButtonStartColor('sectionAdd'),
+        endColor: darkMode.getMenuButtonEndColor('sectionAdd'),
+      ),
+      _buildMenuButton(
+        title: 'زمان‌بندی دروس',
+        icon: Icons.schedule,
+        onTap: () => AppRoutes.goToSchedule(),
+        startColor: darkMode.getMenuButtonStartColor('timetable'),
+        endColor: darkMode.getMenuButtonEndColor('timetable'),
+      ),
+    ];
+  }
+
+  /// ساخت یک دکمه منو
+  Widget _buildMenuButton({
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+    required Color startColor,
+    required Color endColor,
+  }) {
+    return AnimatedMenuButton(
+      title: title,
+      style: AppTextStyles.mainPageMenuButton(
+          DarkModeController.shared.isDarkMode),
+      icon: icon,
+      onTap: onTap,
+      gradientStartColor: startColor,
+      gradientEndColor: endColor,
     );
   }
 }

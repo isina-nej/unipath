@@ -30,6 +30,7 @@ dependencies:
   marquee: ^2.3.0
   cloud_firestore: ^5.6.8
   get: ^4.6.6
+  responsive_builder: ^0.7.1
   # persian_localization: ^1.0.1
 
 dev_dependencies:

@@ -10,39 +10,63 @@ import 'data/models/section_model.dart';
 import 'data/models/section_time_model.dart';
 import 'data/services/hive_service.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+/// کلاس اصلی برنامه
+/// این کلاس مسئولیت راه‌اندازی برنامه و تنظیمات اولیه را بر عهده دارد
+class UniPathApp {
+  // Private constructor
+  UniPathApp._();
 
-  // Initialize Hive
-  await Hive.initFlutter();
+  // نمونه Singleton
+  static final UniPathApp _instance = UniPathApp._();
+  static UniPathApp get instance => _instance;
 
-  // پاک کردن کش باکس‌ها فقط یک بار برای رفع مشکل نوع
-  await Hive.deleteBoxFromDisk('courses');
-  await Hive.deleteBoxFromDisk('sections');
+  /// متد راه‌اندازی برنامه
+  static Future<void> initialize() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Register Hive Adapters
-  Hive.registerAdapter(CourseModelAdapter());
-  Hive.registerAdapter(SectionModelAdapter());
-  Hive.registerAdapter(SectionTimeModelAdapter());
+    // راه‌اندازی Hive
+    await _initializeHive();
 
-  // Open Hive Boxes
-  await Hive.openBox('courses');
-  await Hive.openBox('sections');
-  await Hive.openBox('lastUpdate');
+    // راه‌اندازی سرویس‌ها
+    await _initializeServices();
+  }
 
-  // Initialize Services
-  final hiveService = HiveService();
-  await hiveService.init();
+  /// راه‌اندازی Hive
+  static Future<void> _initializeHive() async {
+    await Hive.initFlutter();
 
-  final darkModeController = DarkModeController();
-  await darkModeController.init();
+    // پاک کردن کش باکس‌ها برای رفع مشکل نوع (فقط یک بار)
+    await Hive.deleteBoxFromDisk('courses');
+    await Hive.deleteBoxFromDisk('sections');
 
-  runApp(MyApp(
-    darkModeController: darkModeController,
-    hiveService: hiveService,
-  ));
+    // ثبت Hive Adapters
+    Hive.registerAdapter(CourseModelAdapter());
+    Hive.registerAdapter(SectionModelAdapter());
+    Hive.registerAdapter(SectionTimeModelAdapter());
+
+    // باز کردن باکس‌ها
+    await Hive.openBox('courses');
+    await Hive.openBox('sections');
+    await Hive.openBox('lastUpdate');
+  }
+
+  /// راه‌اندازی سرویس‌ها
+  static Future<void> _initializeServices() async {
+    final hiveService = HiveService();
+    await hiveService.init();
+
+    final darkModeController = DarkModeController();
+    await darkModeController.init();
+
+    // اجرای برنامه
+    runApp(MyApp(
+      darkModeController: darkModeController,
+      hiveService: hiveService,
+    ));
+  }
 }
 
+/// ویجت اصلی برنامه
 class MyApp extends StatelessWidget {
   final DarkModeController darkModeController;
   final HiveService hiveService;
@@ -73,7 +97,7 @@ class MyApp extends StatelessWidget {
               child: child!,
             );
           },
-          // Custom transition settings
+          // تنظیمات انتقال زیبا
           defaultTransition: Transition.fadeIn,
           transitionDuration: const Duration(milliseconds: 500),
           defaultGlobalState: true,
@@ -83,4 +107,9 @@ class MyApp extends StatelessWidget {
       },
     );
   }
+}
+
+/// نقطه ورود برنامه
+void main() async {
+  await UniPathApp.initialize();
 }

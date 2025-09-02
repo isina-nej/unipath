@@ -5,36 +5,51 @@ import '../../presentation/pages/schedule/schedule_page.dart';
 import '../../presentation/pages/next_term/course_registration_page.dart';
 import '../../data/services/hive_service.dart';
 
+/// کلاس مدیریت مسیرهای برنامه
+/// این کلاس از الگوی Singleton استفاده می‌کند و تمامی مسیرها و ناوبری‌ها را مدیریت می‌کند
 class AppRoutes {
-  // Route names
-  static const String home = '/';
-  static const String course = '/course';
-  static const String schedule = '/schedule';
-  static const String courseRegistration = '/next-term/registration';
+  // Private constructor برای جلوگیری از نمونه‌سازی مستقیم
+  AppRoutes._();
 
-  // Get all pages
-  static List<GetPage> getPages(HiveService hiveService) {
+  // نمونه Singleton
+  static final AppRoutes _instance = AppRoutes._();
+  static AppRoutes get instance => _instance;
+
+  // Route names - خصوصی برای جلوگیری از تغییر مستقیم
+  static const String _home = '/';
+  static const String _course = '/course';
+  static const String _schedule = '/schedule';
+  static const String _courseRegistration = '/next-term/registration';
+
+  // Getters برای دسترسی به route names
+  static String get home => _home;
+  static String get course => _course;
+  static String get schedule => _schedule;
+  static String get courseRegistration => _courseRegistration;
+
+  // Private method برای ایجاد صفحات
+  static List<GetPage> _getPages(HiveService hiveService) {
     return [
       GetPage(
-        name: AppRoutes.home,
+        name: _home,
         page: () => MainPage(hiveService: hiveService),
         transition: Transition.fadeIn,
         transitionDuration: const Duration(milliseconds: 500),
       ),
       GetPage(
-        name: AppRoutes.course,
+        name: _course,
         page: () => CourseSelectionPage(hiveService: hiveService),
         transition: Transition.rightToLeft,
         transitionDuration: const Duration(milliseconds: 400),
       ),
       GetPage(
-        name: AppRoutes.schedule,
+        name: _schedule,
         page: () => SchedulePage(hiveService: hiveService),
         transition: Transition.upToDown,
         transitionDuration: const Duration(milliseconds: 500),
       ),
       GetPage(
-        name: AppRoutes.courseRegistration,
+        name: _courseRegistration,
         page: () => CourseRegistrationPage(hiveService: hiveService),
         transition: Transition.downToUp,
         transitionDuration: const Duration(milliseconds: 500),
@@ -42,25 +57,14 @@ class AppRoutes {
     ];
   }
 
-  // Navigation methods with beautiful animations
-  static void goToHome() {
-    Get.offAllNamed(home);
-  }
+  // Public method برای دسترسی به صفحات
+  static List<GetPage> getPages(HiveService hiveService) =>
+      _getPages(hiveService);
 
-  static void goToCourse() {
-    Get.toNamed(course);
-  }
-
-  static void goToSchedule() {
-    Get.toNamed(schedule);
-  }
-
-  static void goToCourseRegistration() {
-    Get.toNamed(courseRegistration);
-  }
-
-  // Back navigation
-  static void goBack() {
-    Get.back();
-  }
+  // Navigation methods با encapsulation بهتر
+  static void goToHome() => Get.offAllNamed(_home);
+  static void goToCourse() => Get.toNamed(_course);
+  static void goToSchedule() => Get.toNamed(_schedule);
+  static void goToCourseRegistration() => Get.toNamed(_courseRegistration);
+  static void goBack() => Get.back();
 }
