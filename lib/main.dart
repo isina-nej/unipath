@@ -9,6 +9,7 @@ import 'data/models/course_model.dart';
 import 'data/models/section_model.dart';
 import 'data/models/section_time_model.dart';
 import 'data/services/hive_service.dart';
+import 'controllers/auth_controller.dart';
 
 /// کلاس اصلی برنامه
 /// این کلاس مسئولیت راه‌اندازی برنامه و تنظیمات اولیه را بر عهده دارد
@@ -57,6 +58,9 @@ class UniPathApp {
 
     final darkModeController = DarkModeController();
     await darkModeController.init();
+
+    // Initialize auth controller
+    Get.put(AuthController());
 
     // اجرای برنامه
     runApp(MyApp(

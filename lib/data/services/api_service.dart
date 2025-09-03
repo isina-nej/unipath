@@ -1,7 +1,8 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'auth_service.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -16,189 +17,243 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static const String baseUrl = 'https://isinanej.pythonanywhere.com';
-  // Reduced timeout to fail faster during development
+  static const String baseUrl = 'http://localhost:8000/api/v1';
   static const Duration timeoutDuration = Duration(seconds: 10);
-  // Reduced retries to fail faster during development
   static const int maxRetries = 2;
 
+  // Get all courses
+  static Future<List<dynamic>> getCourses({
+    Map<String, dynamic>? filters,
+  }) async {
+    try {
+      final queryParams = filters != null
+          ? Uri(
+              queryParameters:
+                  filters.map((k, v) => MapEntry(k, v.toString()))).query
+          : '';
+      final url = '/courses/courses/';
+
+      final response = await AuthService.authenticatedRequest('GET', url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['results'] ?? data;
+      } else {
+        throw ApiException('Failed to load courses', response.statusCode);
+      }
+    } catch (e) {
+      throw ApiException('Error fetching courses: ');
+    }
+  }
+
+  // Get course by ID
+  static Future<Map<String, dynamic>> getCourse(int id) async {
+    try {
+      final response =
+          await AuthService.authenticatedRequest('GET', '/courses/courses//');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw ApiException('Failed to load course', response.statusCode);
+      }
+    } catch (e) {
+      throw ApiException('Error fetching course: ');
+    }
+  }
+
+  // Get all sections
+  static Future<List<dynamic>> getSections({
+    Map<String, dynamic>? filters,
+  }) async {
+    try {
+      final queryParams = filters != null
+          ? Uri(
+              queryParameters:
+                  filters.map((k, v) => MapEntry(k, v.toString()))).query
+          : '';
+      final url = '/courses/sections/';
+
+      final response = await AuthService.authenticatedRequest('GET', url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['results'] ?? data;
+      } else {
+        throw ApiException('Failed to load sections', response.statusCode);
+      }
+    } catch (e) {
+      throw ApiException('Error fetching sections: ');
+    }
+  }
+
+  // Get section by ID
+  static Future<Map<String, dynamic>> getSection(int id) async {
+    try {
+      final response =
+          await AuthService.authenticatedRequest('GET', '/courses/sections//');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw ApiException('Failed to load section', response.statusCode);
+      }
+    } catch (e) {
+      throw ApiException('Error fetching section: ');
+    }
+  }
+
+  // Get section times
+  static Future<List<dynamic>> getSectionTimes({
+    Map<String, dynamic>? filters,
+  }) async {
+    try {
+      final queryParams = filters != null
+          ? Uri(
+              queryParameters:
+                  filters.map((k, v) => MapEntry(k, v.toString()))).query
+          : '';
+      final url = '/courses/section-times/';
+
+      final response = await AuthService.authenticatedRequest('GET', url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['results'] ?? data;
+      } else {
+        throw ApiException('Failed to load section times', response.statusCode);
+      }
+    } catch (e) {
+      throw ApiException('Error fetching section times: ');
+    }
+  }
+
+  // Legacy method for backward compatibility
   static Future<Map<String, dynamic>> getAllUniversityData() async {
-    int retryCount = 0;
-    late http.Response response;
+    try {
+      final courses = await getCourses();
+      final sections = await getSections();
+      final sectionTimes = await getSectionTimes();
 
-    while (retryCount < maxRetries) {
-      try {
-        print('درخواست اطلاعات از سرور... تلاش ${retryCount + 1}');
-        response = await http.get(
-          Uri.parse('$baseUrl/all_university_data'),
-          headers: {'Content-Type': 'application/json'},
-        ).timeout(timeoutDuration);
-
-        if (response.statusCode == 200) {
-          print('دریافت اطلاعات موفقیت‌آمیز بود');
-          final data = json.decode(response.body);
-          if (data is Map<String, dynamic>) {
-            print('فرمت داده‌ها صحیح است');
-            return data;
-          }
-          throw ApiException('فرمت پاسخ نامعتبر است');
-        } else if (response.statusCode == 429) {
-          print('محدودیت تعداد درخواست. در حال تلاش مجدد...');
-          await Future.delayed(Duration(seconds: 2 * (retryCount + 1)));
-          retryCount++;
-          continue;
-        } else {
-          throw ApiException(
-              'خطای سرور: ${response.statusCode} - ${response.reasonPhrase ?? "خطای نامشخص"}',
-              response.statusCode);
-        }
-      } on TimeoutException {
-        print('تایم‌اوت در برقراری ارتباط. تلاش مجدد...');
-        if (++retryCount < maxRetries) {
-          await Future.delayed(Duration(seconds: 2 * retryCount));
-          continue;
-        }
-        throw ApiException('خطای تایم‌اوت در برقراری ارتباط با سرور');
-      } on SocketException {
-        print('خطای اتصال به اینترنت. تلاش مجدد...');
-        if (++retryCount < maxRetries) {
-          await Future.delayed(Duration(seconds: 2 * retryCount));
-          continue;
-        }
-        throw ApiException('لطفاً اتصال اینترنت خود را بررسی کنید');
-      } on FormatException {
-        throw ApiException('خطا در پردازش پاسخ سرور');
-      } catch (e) {
-        print('خطای غیرمنتظره: $e');
-        throw ApiException('خطای غیرمنتظره: $e');
-      }
+      return {
+        'courses': courses,
+        'sections': sections,
+        'section_times': sectionTimes,
+      };
+    } catch (e) {
+      throw ApiException('Error fetching university data: ');
     }
-
-    throw ApiException(
-        'حداکثر تعداد تلاش‌ها انجام شد. لطفاً بعداً دوباره امتحان کنید.');
   }
 
-  static Future<Map<String, dynamic>> updateSection(
-      int sectionId, Map<String, dynamic> data) async {
+  // Create course
+  static Future<Map<String, dynamic>> createCourse(
+      Map<String, dynamic> courseData) async {
     try {
-      final response = await http
-          .put(
-            Uri.parse('$baseUrl/sections/$sectionId'),
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode(data),
-          )
-          .timeout(timeoutDuration);
+      final response = await AuthService.authenticatedRequest(
+        'POST',
+        '/courses/courses/',
+        body: courseData,
+      );
+
+      if (response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        throw ApiException('Failed to create course', response.statusCode);
+      }
+    } catch (e) {
+      throw ApiException('Error creating course: ');
+    }
+  }
+
+  // Update course
+  static Future<Map<String, dynamic>> updateCourse(
+      int id, Map<String, dynamic> courseData) async {
+    try {
+      final response = await AuthService.authenticatedRequest(
+        'PUT',
+        '/courses/courses//',
+        body: courseData,
+      );
 
       if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        if (responseData is Map<String, dynamic>) {
-          return responseData;
-        }
-        throw ApiException('Invalid response format');
-      } else if (response.statusCode == 404) {
-        throw ApiException('Section not found', response.statusCode);
-      } else if (response.statusCode == 400) {
-        final responseData = json.decode(response.body);
-        throw ApiException(
-            responseData['error'] ?? 'Invalid request', response.statusCode);
+        return json.decode(response.body);
+      } else {
+        throw ApiException('Failed to update course', response.statusCode);
       }
-      throw ApiException(
-          'Update failed: ${response.reasonPhrase ?? "Unknown error"}',
-          response.statusCode);
-    } on http.ClientException catch (e) {
-      throw ApiException('Network error: $e');
-    } on FormatException catch (e) {
-      throw ApiException('Invalid response format: $e');
-    } on Exception catch (e) {
-      throw ApiException('Unexpected error: $e');
+    } catch (e) {
+      throw ApiException('Error updating course: ');
     }
   }
 
+  // Delete course
+  static Future<void> deleteCourse(int id) async {
+    try {
+      final response = await AuthService.authenticatedRequest(
+        'DELETE',
+        '/courses/courses//',
+      );
+
+      if (response.statusCode != 204) {
+        throw ApiException('Failed to delete course', response.statusCode);
+      }
+    } catch (e) {
+      throw ApiException('Error deleting course: ');
+    }
+  }
+
+  // Insert section (for backward compatibility with HiveService)
   static Future<Map<String, dynamic>> insertSection(
-      Map<String, dynamic> data) async {
+      Map<String, dynamic> sectionData) async {
     try {
-      print('Sending data to server: ${json.encode(data)}');
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/sections'),
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode(data),
-          )
-          .timeout(timeoutDuration);
+      final response = await AuthService.authenticatedRequest(
+        'POST',
+        '$baseUrl/courses/sections/',
+        body: sectionData,
+      );
 
-      print('Server response status: ${response.statusCode}');
-      print('Server response body: ${response.body}');
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        if (responseData is Map<String, dynamic>) {
-          return responseData;
-        }
-        throw ApiException('Invalid response format');
-      } else if (response.statusCode == 400) {
-        final responseData = json.decode(response.body);
-        throw ApiException(
-            responseData['error'] ?? 'Invalid request', response.statusCode);
+      if (response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        throw ApiException('Failed to create section', response.statusCode);
       }
-      throw ApiException(
-          'Insert failed: ${response.reasonPhrase ?? "Unknown error"}',
-          response.statusCode);
-    } on http.ClientException catch (e) {
-      throw ApiException('Network error: $e');
-    } on FormatException catch (e) {
-      throw ApiException('Invalid response format: $e');
-    } on Exception catch (e) {
-      throw ApiException('Unexpected error: $e');
+    } catch (e) {
+      throw ApiException('Error creating section: $e');
     }
   }
 
-  static Future<void> deleteSection(int sectionId) async {
+  // Update section (for backward compatibility with HiveService)
+  static Future<Map<String, dynamic>> updateSection(
+      int id, Map<String, dynamic> sectionData) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/sections/$sectionId'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(timeoutDuration);
+      final response = await AuthService.authenticatedRequest(
+        'PUT',
+        '$baseUrl/courses/sections/$id/',
+        body: sectionData,
+      );
 
       if (response.statusCode == 200) {
-        return;
-      } else if (response.statusCode == 404) {
-        throw ApiException('Section not found', response.statusCode);
+        return json.decode(response.body);
+      } else {
+        throw ApiException('Failed to update section', response.statusCode);
       }
-      throw ApiException(
-          'Delete failed: ${response.reasonPhrase ?? "Unknown error"}',
-          response.statusCode);
-    } on http.ClientException catch (e) {
-      throw ApiException('Network error: $e');
-    } on Exception catch (e) {
-      throw ApiException('Unexpected error: $e');
+    } catch (e) {
+      throw ApiException('Error updating section: $e');
     }
   }
 
-  static Future<Map<String, dynamic>> getSection(int sectionId) async {
+  // Delete section (for backward compatibility with HiveService)
+  static Future<void> deleteSection(int id) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/sections/$sectionId'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(timeoutDuration);
+      final response = await AuthService.authenticatedRequest(
+        'DELETE',
+        '$baseUrl/courses/sections/$id/',
+      );
 
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        if (responseData is Map<String, dynamic>) {
-          return responseData;
-        }
-        throw ApiException('Invalid response format');
-      } else if (response.statusCode == 404) {
-        throw ApiException('Section not found', response.statusCode);
+      if (response.statusCode != 204) {
+        throw ApiException('Failed to delete section', response.statusCode);
       }
-      throw ApiException(
-          'Failed to get section: ${response.reasonPhrase ?? "Unknown error"}',
-          response.statusCode);
-    } on http.ClientException catch (e) {
-      throw ApiException('Network error: $e');
-    } on FormatException catch (e) {
-      throw ApiException('Invalid response format: $e');
-    } on Exception catch (e) {
-      throw ApiException('Unexpected error: $e');
+    } catch (e) {
+      throw ApiException('Error deleting section: $e');
     }
   }
 }

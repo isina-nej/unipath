@@ -81,14 +81,15 @@ class HiveService {
         await coursesBox.clear();
         await coursesBox.put('course_map', courseMap);
         print('✅ نقشه درس‌ها با موفقیت ذخیره شد');
-        
+
         // Extract sections from course_map
         print('استخراج سکشن‌ها از course_map...');
         for (var courseData in courseMap.values) {
           if (courseData is Map && courseData.containsKey('sections')) {
             final courseSections = courseData['sections'] as List?;
             if (courseSections != null) {
-              allSections.addAll(courseSections.map((s) => Map<String, dynamic>.from(s)));
+              allSections.addAll(
+                  courseSections.map((s) => Map<String, dynamic>.from(s)));
             }
           }
         }
@@ -105,7 +106,7 @@ class HiveService {
           try {
             final id = sectionData['id'] ?? sectionData['section_id'];
             print('پردازش سکشن با شناسه: $id');
-            
+
             if (sectionData['course_id'] == null) {
               print('⚠️ رد شد: سکشن فاقد course_id');
               continue;
@@ -113,7 +114,7 @@ class HiveService {
 
             final sectionModel = SectionModel.fromJson(sectionData);
             await sectionsBox.put(sectionModel.id, sectionModel);
-            
+
             if (sectionsBox.containsKey(sectionModel.id)) {
               successCount++;
               print('✅ سکشن $id با موفقیت ذخیره شد');
@@ -159,7 +160,7 @@ class HiveService {
   }
 
   // حذف سکشن
-  Future<void> deleteSection(String id) async {
+  Future<void> deleteSection(int id) async {
     await sectionsBox.delete(id);
   }
 
@@ -267,7 +268,7 @@ class HiveService {
     try {
       print('Starting synchronized section save...');
       Map<String, dynamic> serverResponse = {};
-    
+
       // Create a clean copy of the data
       var createData = Map<String, dynamic>.from(data);
       // Remove any existing ID to ensure clean creation
@@ -328,7 +329,7 @@ class HiveService {
       }
 
       // بعد از موفقیت در سرور، در کش به‌روزرسانی می‌کنیم
-      await updateSection(finalData);
+      await saveSection(sectionId, finalData);
       print('Section updated in cache successfully');
 
       await updateLastUpdateTime();
@@ -356,7 +357,7 @@ class HiveService {
       print('Section deleted from server successfully');
 
       // بعد از موفقیت در سرور، از کش حذف می‌کنیم
-      await deleteSection(sectionId);
+      await deleteSection(int.parse(sectionId));
       print('Section deleted from cache successfully');
 
       await updateLastUpdateTime();
@@ -364,7 +365,7 @@ class HiveService {
       print('API error in synchronized section delete: ${e.message}');
       if (e.statusCode == 404) {
         // اگر سکشن در سرور وجود نداشت، فقط از کش حذف می‌کنیم
-        await deleteSection(sectionId);
+        await deleteSection(int.parse(sectionId));
         print('Section not found on server, deleted from cache');
       } else {
         throw Exception('Failed to delete section: ${e.message}');

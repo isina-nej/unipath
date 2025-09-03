@@ -61,7 +61,7 @@ class SectionPopup extends StatelessWidget {
 
   Future<void> _deleteSection(BuildContext context, int sectionId) async {
     try {
-      await hiveService.deleteSection(sectionId.toString());
+      await hiveService.deleteSection(sectionId);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

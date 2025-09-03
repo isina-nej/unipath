@@ -8,6 +8,8 @@ import '../../../core/routing/app_routes.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/hive_service.dart';
 import '../../../core/utils/error_handler.dart';
+import '../../../controllers/auth_controller.dart';
+import 'package:get/get.dart';
 
 /// صفحه اصلی برنامه
 /// این کلاس از الگوی State Management استفاده می‌کند و ریسپانسیو است
@@ -202,6 +204,15 @@ class _MainPageState extends State<MainPage> {
           tooltip: 'پروفایل',
           onPressed: () => _showProfileDialog(),
         ),
+        IconButton(
+          icon: Icon(
+            Icons.logout,
+            size: 24,
+            color: isDark ? Colors.white : Colors.black,
+          ),
+          tooltip: 'خروج',
+          onPressed: () => _logout(),
+        ),
       ],
     );
   }
@@ -221,6 +232,13 @@ class _MainPageState extends State<MainPage> {
         ],
       ),
     );
+  }
+
+  /// خروج از حساب کاربری
+  void _logout() async {
+    final authController = Get.find<AuthController>();
+    await authController.logout();
+    AppRoutes.goToLogin();
   }
 
   /// ساخت بدنه صفحه
