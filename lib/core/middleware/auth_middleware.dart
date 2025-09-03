@@ -5,7 +5,15 @@ import '../routing/app_routes.dart';
 
 class AuthMiddleware extends GetMiddleware {
   @override
+  int? get priority => 1; // Higher priority to run first
+
+  @override
   RouteSettings? redirect(String? route) {
+    // Wait for auth controller to be ready
+    if (!Get.isRegistered<AuthController>()) {
+      return null;
+    }
+
     final authController = Get.find<AuthController>();
 
     // If user is not authenticated and trying to access protected routes

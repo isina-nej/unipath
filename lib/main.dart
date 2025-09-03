@@ -92,7 +92,7 @@ class MyApp extends StatelessWidget {
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.delegates,
           theme: AppTheme.getTheme(darkModeController.themeData.colorScheme),
-          initialRoute: AppRoutes.home,
+          initialRoute: AppRoutes.login,
           getPages: AppRoutes.getPages(hiveService),
           debugShowCheckedModeBanner: false,
           builder: (context, child) {

@@ -45,8 +45,7 @@ class LoginPage extends StatelessWidget {
                             usernameController.text,
                             passwordController.text,
                           );
-                          Get.offAllNamed(
-                              '/home'); // Navigate to home after login
+                          // Navigation is handled in AuthController
                         } catch (e) {
                           // Error is handled in controller
                         }

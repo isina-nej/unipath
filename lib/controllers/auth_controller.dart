@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:get/get.dart';
 import '../data/services/auth_service.dart';
+import '../core/routing/app_routes.dart';
 
 class AuthController extends GetxController {
   var isAuthenticated = false.obs;
@@ -30,10 +32,12 @@ class AuthController extends GetxController {
   Future<void> login(String username, String password) async {
     isLoading.value = true;
     try {
-      final result = await AuthService.login(username, password);
+      await AuthService.login(username, password);
       isAuthenticated.value = true;
       await loadUserProfile();
       Get.snackbar('Success', 'Login successful');
+      // Navigate to home after successful login
+      Get.offAllNamed(AppRoutes.home);
     } catch (e) {
       Get.snackbar('Error', 'Login failed: $e');
       rethrow;
@@ -52,7 +56,7 @@ class AuthController extends GetxController {
   }) async {
     isLoading.value = true;
     try {
-      final result = await AuthService.register(
+      await AuthService.register(
         username: username,
         email: email,
         password: password,
@@ -76,6 +80,8 @@ class AuthController extends GetxController {
       isAuthenticated.value = false;
       userProfile.value = {};
       Get.snackbar('Success', 'Logged out successfully');
+      // Navigate to login after logout
+      Get.offAllNamed(AppRoutes.login);
     } catch (e) {
       Get.snackbar('Error', 'Logout failed: $e');
     } finally {
@@ -85,12 +91,11 @@ class AuthController extends GetxController {
 
   Future<void> loadUserProfile() async {
     try {
-      final headers = await AuthService.getAuthHeaders();
       final response = await AuthService.authenticatedRequest(
           'GET', 'http://localhost:8000/api/v1/auth/profile/');
 
       if (response.statusCode == 200) {
-        userProfile.value = response.body as Map<String, dynamic>;
+        userProfile.value = json.decode(response.body);
       }
     } catch (e) {
       print('Error loading user profile: $e');
